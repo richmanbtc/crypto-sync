@@ -1,0 +1,28 @@
+version: "3"
+services:
+  sync:
+    build: .
+    volumes:
+      - ./src:/app/src:ro
+    environment:
+      CCXT_EXCHANGE: ${CCXT_EXCHANGE:-ftx}
+      CCXT_API_KEY: ${CCXT_API_KEY}
+      CCXT_API_SECRET: ${CCXT_API_SECRET}
+      CCXT_API_PASSWORD: ${CCXT_API_PASSWORD}
+      CRYPTO_SYNC_ACCOUNT: ${CRYPTO_SYNC_ACCOUNT}
+      CRYPTO_SYNC_DATABASE_URL: 'postgresql://postgres:postgres@postgres/postgres'
+    depends_on:
+      - postgres
+    restart: always
+  grafana:
+    image: grafana/grafana:9.3.1
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: grafana
+      GF_SECURITY_ADMIN_PASSWORD: grafana
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
