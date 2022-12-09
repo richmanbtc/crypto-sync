@@ -39,8 +39,8 @@ class Synchronizer:
         self._fetch_hist_collaterals(fetched_at)
 
     def _fetch_orders(self, fetched_at):
-        statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = '{}'".format(self._account)
-        symbols = [row['symbol'] for row in self._db.query(statement)]
+        statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = :account"
+        symbols = [row['symbol'] for row in self._db.query(statement, account=self._account)]
 
         for symbol in symbols:
             self._fetch_sleep()
@@ -48,6 +48,15 @@ class Synchronizer:
             orders = fetch_orders(self._client, symbol)
             orders = list(map(normalize_order, orders))
             self._add_common_columns(orders, fetched_at)
+
+            ids = [x['id'] for x in orders]
+            statement = """SELECT id FROM orders
+            WHERE account = :account AND symbol = :symbol
+            AND status <> 'open' AND id = ANY(:ids)"""
+            frozen_order_ids = set([row['id'] for row in self._db.query(
+                statement, account=self._account, symbol=symbol, ids=ids)])
+
+            orders = [x for x in orders if x['id'] not in frozen_order_ids]
             self._logger.info('upsert {}'.format(orders))
             self._orders_table.upsert_many(orders, keys=['account', 'id'])
 
@@ -69,8 +78,8 @@ class Synchronizer:
         else:
             positions = self._client.fetch_positions()
             positions = merge_positions(positions)
-        statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = '{}'".format(self._account)
-        existing_symbols = set([row['symbol'] for row in self._db.query(statement)])
+        statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = :account"
+        existing_symbols = set([row['symbol'] for row in self._db.query(statement, account=self._account)])
         for i in range(len(positions))[::-1]:
             pos = positions[i]
             if pos['size'] == 0 and pos['symbol'] not in existing_symbols:
