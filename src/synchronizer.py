@@ -49,16 +49,16 @@ class Synchronizer:
             orders = list(map(normalize_order, orders))
             self._add_common_columns(orders, fetched_at)
 
-            ids = [x['id'] for x in orders]
-            statement = """SELECT id FROM orders
+            ids = [x['order_id'] for x in orders]
+            statement = """SELECT order_id FROM orders
             WHERE account = :account AND symbol = :symbol
-            AND status <> 'open' AND id = ANY(:ids)"""
-            frozen_order_ids = set([row['id'] for row in self._db.query(
+            AND status <> 'open' AND order_id = ANY(:ids)"""
+            frozen_order_ids = set([row['order_id'] for row in self._db.query(
                 statement, account=self._account, symbol=symbol, ids=ids)])
 
-            orders = [x for x in orders if x['id'] not in frozen_order_ids]
+            orders = [x for x in orders if x['order_id'] not in frozen_order_ids]
             self._logger.info('upsert {}'.format(orders))
-            self._orders_table.upsert_many(orders, keys=['account', 'id'])
+            self._orders_table.upsert_many(orders, keys=['account', 'order_id'])
 
     def _fetch_hist_positions(self, fetched_at):
         self._fetch_sleep()
@@ -113,10 +113,9 @@ class Synchronizer:
 def create_orders_table(db):
     table = db.create_table(
         'orders',
-        primary_id='id',
-        primary_type=db.types.string(),
     )
     table.create_column('account', db.types.guess('account'), nullable=False)
+    table.create_column('order_id', db.types.guess('order'), nullable=False)
     table.create_column('timestamp', db.types.guess(1))
     table.create_column('last_trade_timestamp', db.types.guess(1))
     table.create_column('status', db.types.guess('open'))
@@ -133,6 +132,7 @@ def create_orders_table(db):
     table.create_column('fetched_at', db.types.guess(1), nullable=False)
 
     table.create_index(['fetched_at', 'account'])
+    table.create_index(['account', 'order_id'], unique=True)
 
     return table
 
@@ -140,7 +140,7 @@ def create_orders_table(db):
 def normalize_order(row):
     # https://github.com/ccxt/ccxt/wiki/Manual#order-structure
     return {
-        'id': row['id'],
+        'order_id': row['id'],
         'timestamp': row['timestamp'],
         'last_trade_timestamp': row['lastTradeTimestamp'],
         'status': row['status'],
