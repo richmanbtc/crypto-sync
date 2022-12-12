@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_POSTGRESQL",
-      "label": "PostgreSQL",
+      "name": "DS_POSTGRESQL-CRYPTO-SYNC",
+      "label": "PostgreSQL-crypto-sync",
       "description": "",
       "type": "datasource",
       "pluginId": "postgres",
@@ -15,7 +15,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "9.3.1"
+      "version": "9.1.2"
     },
     {
       "type": "datasource",
@@ -68,7 +68,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_POSTGRESQL}"
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
       },
       "fieldConfig": {
         "defaults": {
@@ -89,14 +89,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -131,7 +131,9 @@
       "id": 11,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -145,13 +147,25 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_POSTGRESQL}"
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
           },
           "editorMode": "code",
-          "format": "table",
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nfetched_at as time,\ncollateral / FIRST_VALUE (collateral) OVER (PARTITION BY account ORDER BY fetched_at) as \" \",\naccount\nFROM hist_collaterals AS t1\nORDER by account, t1.fetched_at",
+          "rawSql": "SELECT\nfetched_at as time,\n(collateral / FIRST_VALUE (collateral) OVER (PARTITION BY account ORDER BY fetched_at) - 1) * 100 as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000)\nORDER by fetched_at, account",
           "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
           "sql": {
             "columns": [
               {
@@ -168,24 +182,25 @@
               }
             ],
             "limit": 50
-          }
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
       ],
-      "title": "return",
-      "transformations": [
-        {
-          "id": "prepareTimeSeries",
-          "options": {
-            "format": "many"
-          }
-        }
-      ],
+      "title": "return %",
+      "transformations": [],
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_POSTGRESQL}"
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
       },
       "fieldConfig": {
         "defaults": {
@@ -206,14 +221,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -248,7 +263,9 @@
       "id": 8,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -262,13 +279,25 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_POSTGRESQL}"
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
           },
           "editorMode": "code",
-          "format": "table",
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nfetched_at as time,\ncollateral as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE currency = 'USD'\nORDER by account, t1.fetched_at",
+          "rawSql": "SELECT\nfetched_at as time,\ncollateral as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE currency = 'USD' AND $__unixEpochFilter(fetched_at / 1000)\nORDER by fetched_at, account",
           "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
           "sql": {
             "columns": [
               {
@@ -285,24 +314,25 @@
               }
             ],
             "limit": 50
-          }
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
       ],
       "title": "collaterals usd",
-      "transformations": [
-        {
-          "id": "prepareTimeSeries",
-          "options": {
-            "format": "many"
-          }
-        }
-      ],
+      "transformations": [],
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_POSTGRESQL}"
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
       },
       "fieldConfig": {
         "defaults": {
@@ -323,14 +353,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -365,7 +395,9 @@
       "id": 9,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -379,13 +411,25 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_POSTGRESQL}"
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
           },
           "editorMode": "code",
-          "format": "table",
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nfetched_at as time,\ncollateral as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE currency = 'JPY'\nORDER by account, t1.fetched_at",
+          "rawSql": "SELECT\nfetched_at as time,\ncollateral as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE currency = 'JPY' AND $__unixEpochFilter(fetched_at / 1000)\nORDER by fetched_at, account",
           "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
           "sql": {
             "columns": [
               {
@@ -402,7 +446,15 @@
               }
             ],
             "limit": 50
-          }
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
       ],
       "title": "collaterals jpy",
@@ -434,7 +486,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_POSTGRESQL}"
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
       },
       "fieldConfig": {
         "defaults": {
@@ -455,14 +507,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -511,13 +563,25 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_POSTGRESQL}"
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
           },
           "editorMode": "code",
-          "format": "table",
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nfetched_at as time,\nsize * mark_price as \" \",\nsymbol \nfrom hist_positions \nwhere account = $account\norder by symbol, fetched_at",
+          "rawSql": "SELECT\nfetched_at as time,\nsize * mark_price as \" \",\nsymbol \nfrom hist_positions \nwhere account = $account AND $__unixEpochFilter(fetched_at / 1000)\norder by fetched_at, symbol",
           "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
           "sql": {
             "columns": [
               {
@@ -534,24 +598,25 @@
               }
             ],
             "limit": 50
-          }
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
       ],
       "title": "positions",
-      "transformations": [
-        {
-          "id": "prepareTimeSeries",
-          "options": {
-            "format": "many"
-          }
-        }
-      ],
+      "transformations": [],
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_POSTGRESQL}"
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
       },
       "fieldConfig": {
         "defaults": {
@@ -572,14 +637,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -614,7 +679,9 @@
       "id": 10,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -628,13 +695,25 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_POSTGRESQL}"
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
           },
           "editorMode": "code",
-          "format": "table",
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nt1.fetched_at as time,\nsize * mark_price / t2.collateral as \" \",\nsymbol\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at\nWHERE t1.account = $account\nORDER by symbol, t1.fetched_at",
+          "rawSql": "SELECT\nt1.fetched_at as time,\nsize * mark_price / t2.collateral as \" \", \nsymbol\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at AND t1.account = t2.account\nWHERE t1.account = $account AND $__unixEpochFilter(t1.fetched_at / 1000)\nORDER by t1.fetched_at, symbol",
           "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
           "sql": {
             "columns": [
               {
@@ -651,24 +730,25 @@
               }
             ],
             "limit": 50
-          }
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
       ],
       "title": "leverage",
-      "transformations": [
-        {
-          "id": "prepareTimeSeries",
-          "options": {
-            "format": "many"
-          }
-        }
-      ],
+      "transformations": [],
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_POSTGRESQL}"
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
       },
       "fieldConfig": {
         "defaults": {
@@ -683,8 +763,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -732,18 +811,30 @@
           }
         ]
       },
-      "pluginVersion": "9.3.1",
+      "pluginVersion": "9.1.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_POSTGRESQL}"
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
           },
           "editorMode": "code",
           "format": "table",
+          "group": [],
+          "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n*\nFROM orders AS t1\nWHERE t1.account = $account\nORDER BY t1.fetched_at, symbol",
+          "rawSql": "SELECT\n*\nFROM orders AS t1\nWHERE t1.account = $account AND $__unixEpochFilter(fetched_at / 1000)\nORDER BY t1.fetched_at, symbol",
           "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
           "sql": {
             "columns": [
               {
@@ -760,7 +851,15 @@
               }
             ],
             "limit": 50
-          }
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
       ],
       "title": "orders",
@@ -770,7 +869,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_POSTGRESQL}"
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
       },
       "fieldConfig": {
         "defaults": {
@@ -791,13 +890,13 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "stepAfter",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -812,8 +911,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -833,7 +931,9 @@
       "id": 7,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "last"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -847,13 +947,25 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "${DS_POSTGRESQL}"
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
           },
           "editorMode": "code",
           "format": "table",
+          "group": [],
+          "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nt1.fetched_at as time,\nsum(abs(size * mark_price) / t2.collateral) as \" \"\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at\nWHERE t1.account = $account\nGROUP BY t1.fetched_at\nORDER by t1.fetched_at",
+          "rawSql": "SELECT\nt1.fetched_at as time,\nsum(abs(size * mark_price) / t2.collateral) as \" \"\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at AND t1.account = t2.account\nWHERE t1.account = $account AND $__unixEpochFilter(t1.fetched_at / 1000)\nGROUP BY t1.fetched_at\nORDER by t1.fetched_at",
           "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
           "sql": {
             "columns": [
               {
@@ -870,7 +982,15 @@
               }
             ],
             "limit": 50
-          }
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
       ],
       "title": "total leverage",
@@ -887,7 +1007,7 @@
         "current": {},
         "datasource": {
           "type": "postgres",
-          "uid": "${DS_POSTGRESQL}"
+          "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
         },
         "definition": "SELECT DISTINCT account FROM hist_collaterals",
         "hide": 0,
@@ -905,13 +1025,13 @@
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "crypto-sync",
   "uid": "KrXkQrF4k",
-  "version": 22,
+  "version": 40,
   "weekStart": ""
 }
