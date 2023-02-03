@@ -67,7 +67,6 @@ class Synchronizer:
         self._fetch_sleep()
         self._logger.info('fetch_positions')
         positions = fetch_positions(self._client, self._account_type)
-        positions = merge_positions(positions)
         statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = :account"
         existing_symbols = set([row['symbol'] for row in self._db.query(statement, account=self._account)])
         for i in range(len(positions))[::-1]:
@@ -163,21 +162,6 @@ def create_hist_positions_table(db):
     table.create_index(['fetched_at', 'account', 'symbol'], unique=True)
 
     return table
-
-
-def merge_positions(positions):
-    merged = {}
-    for pos in positions:
-        symbol = pos['symbol']
-        if symbol not in merged:
-            merged[symbol] = {
-                'symbol': symbol,
-                'size': 0.0,
-                'mark_price': pos['markPrice'],
-            }
-        side_int = 1 if pos['side'] == 'long' else -1
-        merged[symbol]['size'] += pos['contracts'] * pos['contractSize'] * side_int
-    return list(merged.values())
 
 
 def create_hist_collaterals_table(db):

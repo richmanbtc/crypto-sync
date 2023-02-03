@@ -104,7 +104,23 @@ def fetch_positions(client, account_type):
             }[account_type]
             symbols = [symbols]
 
-    return client.fetch_positions(symbols=symbols)
+    positions = client.fetch_positions(symbols=symbols)
+    return _merge_positions(positions)
+
+
+def _merge_positions(positions):
+    merged = {}
+    for pos in positions:
+        symbol = pos['symbol']
+        if symbol not in merged:
+            merged[symbol] = {
+                'symbol': symbol,
+                'size': 0.0,
+                'mark_price': pos['markPrice'],
+            }
+        side_int = 1 if pos['side'] == 'long' else -1
+        merged[symbol]['size'] += pos['contracts'] * pos['contractSize'] * side_int
+    return list(merged.values())
 
 
 def validate_account_type(exchange, account_type):
