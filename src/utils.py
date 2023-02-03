@@ -68,6 +68,19 @@ def fetch_collateral(client, account_type):
     return dict(collateral=collateral, currency=currency)
 
 
+def fetch_converted_collaterals(collateral, currency):
+    client = ccxt.kraken()
+    if currency == 'JPY':
+        price = client.fetch_ticker('USD/JPY')['last']
+        return dict(jpy=collateral, usd=collateral / price)
+    elif currency == 'USD':
+        price = client.fetch_ticker('USD/JPY')['last']
+        return dict(jpy=collateral * price, usd=collateral)
+
+    price = client.fetch_ticker('{}/USD'.format(currency))['last']
+    return fetch_converted_collaterals(collateral * price, 'USD')
+
+
 def fetch_positions(client, account_type):
     if client.id == 'bitflyer':
         res = client.privateGetGetpositions({'product_code': 'FX_BTC_JPY'})

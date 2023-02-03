@@ -4,6 +4,7 @@ from .utils import (
     fetch_collateral,
     fetch_orders,
     fetch_positions,
+    fetch_converted_collaterals,
 )
 
 
@@ -86,6 +87,9 @@ class Synchronizer:
         self._fetch_sleep()
         self._logger.info('fetch_collateral')
         result = fetch_collateral(self._client, self._account_type)
+        converted = fetch_converted_collaterals(result['collateral'], result['currency'])
+        for key in converted:
+            result['currency_{}'.format(key)] = converted[key]
         self._add_common_columns([result], fetched_at)
         self._logger.info('insert {}'.format(result))
         self._hist_collaterals_table.insert(result)
@@ -184,6 +188,8 @@ def create_hist_collaterals_table(db):
     table.create_column('currency', db.types.guess('USD'), nullable=False)
     table.create_column('collateral', db.types.guess(1.2), nullable=False)
     table.create_column('fetched_at', db.types.guess(1), nullable=False)
+    table.create_column('collateral_jpy', db.types.guess(1.2), nullable=True)
+    table.create_column('collateral_usd', db.types.guess(1.2), nullable=True)
 
     table.create_index(['fetched_at', 'account'], unique=True)
 
