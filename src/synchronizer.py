@@ -3,17 +3,19 @@ import traceback
 from .utils import (
     fetch_collateral,
     fetch_orders,
+    fetch_positions,
 )
 
 
 class Synchronizer:
     def __init__(self, client, logger,
-                 db, health_check_ping, account):
+                 db, health_check_ping, account, account_type):
         self._client = client
         self._logger = logger
         self._db = db
         self._health_check_ping = health_check_ping
         self._account = account
+        self._account_type = account_type
         self._fetch_interval = 2
         self._loop_interval = 60
 
@@ -63,21 +65,8 @@ class Synchronizer:
     def _fetch_hist_positions(self, fetched_at):
         self._fetch_sleep()
         self._logger.info('fetch_positions')
-        if self._client.id == 'bitflyer':
-            res = self._client.privateGetGetpositions({'product_code': 'FX_BTC_JPY'})
-            pos = 0.0
-            for item in res:
-                pos += float(item['size']) * (1 if item['side'] == 'BUY' else -1)
-            positions = [
-                {
-                    'symbol': 'BTC/JPY:JPY',
-                    'size': pos,
-                    'mark_price': None,
-                }
-            ]
-        else:
-            positions = self._client.fetch_positions()
-            positions = merge_positions(positions)
+        positions = fetch_positions(self._client, self._account_type)
+        positions = merge_positions(positions)
         statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = :account"
         existing_symbols = set([row['symbol'] for row in self._db.query(statement, account=self._account)])
         for i in range(len(positions))[::-1]:
@@ -96,7 +85,7 @@ class Synchronizer:
     def _fetch_hist_collaterals(self, fetched_at):
         self._fetch_sleep()
         self._logger.info('fetch_collateral')
-        result = fetch_collateral(self._client)
+        result = fetch_collateral(self._client, self._account_type)
         self._add_common_columns([result], fetched_at)
         self._logger.info('insert {}'.format(result))
         self._hist_collaterals_table.insert(result)

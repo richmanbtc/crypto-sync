@@ -10,10 +10,11 @@ services:
       CCXT_API_SECRET: ${CCXT_API_SECRET}
       CCXT_API_PASSWORD: ${CCXT_API_PASSWORD}
       CRYPTO_SYNC_ACCOUNT: ${CRYPTO_SYNC_ACCOUNT}
+      CRYPTO_SYNC_ACCOUNT_TYPE: ${CRYPTO_SYNC_ACCOUNT_TYPE}
       CRYPTO_SYNC_DATABASE_URL: 'postgresql://postgres:postgres@postgres/postgres'
     depends_on:
       - postgres
-    restart: always
+#    restart: always
   grafana:
     image: grafana/grafana:9.3.1
     ports:

@@ -2,6 +2,7 @@ import os
 import dataset
 from src.utils import (
     create_ccxt_client,
+    validate_account_type,
 )
 from .logger import create_logger
 from .synchronizer import Synchronizer
@@ -15,11 +16,18 @@ def start():
     api_password = os.getenv('CCXT_API_PASSWORD')
     log_level = os.getenv('CRYPTO_SYNC_LOG_LEVEL')
     account = os.getenv('CRYPTO_SYNC_ACCOUNT')
+    account_type = os.getenv('CRYPTO_SYNC_ACCOUNT_TYPE', '')
+    account_type = None if account_type == '' else account_type
 
     if account is None or account == '':
         raise Exception('CRYPTO_SYNC_ACCOUNT empty')
 
+    validate_account_type(exchange, account_type)
+
     logger = create_logger(log_level)
+    logger.info('exchange {}'.format(exchange))
+    logger.info('account {}'.format(account))
+    logger.info('account_type {}'.format(account_type))
 
     panic_manager = PanicManager(logger=logger)
     panic_manager.register('bot', 5 * 60, 5 * 60)
@@ -34,6 +42,7 @@ def start():
         api_key=api_key,
         api_secret=api_secret,
         api_password=api_password,
+        account_type=account_type,
     )
 
     synchronizer = Synchronizer(
@@ -41,6 +50,7 @@ def start():
         logger=logger,
         db=db,
         account=account,
+        account_type=account_type,
         health_check_ping=health_check_ping,
     )
     synchronizer.run()
