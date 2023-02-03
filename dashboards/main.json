@@ -130,6 +130,92 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
+          "rawSql": "WITH t2 AS (\nSELECT\nROW_NUMBER() OVER (PARTITION BY account ORDER BY fetched_at DESC) AS \"rownum\",\ncollateral_usd,\naccount\nFROM hist_collaterals AS t1\n)\nSELECT\nSUM(collateral_usd)\nFROM t2\nWHERE rownum = 1",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "amount"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "positions",
+          "timeColumn": "synchronized_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "KPI (total usd)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 97,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.1.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
+          },
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
           "rawSql": "WITH t2 AS (\nSELECT\nROW_NUMBER() OVER (PARTITION BY account ORDER BY fetched_at DESC) AS \"rownum\",\ncollateral_jpy,\naccount\nFROM hist_collaterals AS t1\n)\nSELECT\nSUM(collateral_jpy)\nFROM t2\nWHERE rownum = 1",
           "refId": "A",
           "select": [
@@ -154,140 +240,8 @@
           ]
         }
       ],
-      "title": "KPI (total jpy)",
+      "title": "total jpy",
       "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 52,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "group": [],
-          "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "SELECT\n(FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60 * 1000)) as time,\nAVG(collateral_jpy) as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000) AND (FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60)) < extract(epoch from now()) - 5 * 60\nGROUP BY time, account\nORDER by time, account",
-          "refId": "A",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "column"
-              }
-            ]
-          ],
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          },
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "title": "stacked converted collaterals jpy",
-      "transformations": [],
-      "type": "timeseries"
     },
     {
       "datasource": {
@@ -484,7 +438,7 @@
         "x": 12,
         "y": 8
       },
-      "id": 54,
+      "id": 52,
       "options": {
         "legend": {
           "calcs": [
@@ -510,7 +464,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "WITH t2 AS (SELECT\n(FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60 * 1000)) as time,\nAVG(collateral_jpy) as \" \",\naccount, currency\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000) AND (FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60)) < extract(epoch from now()) - 5 * 60\nGROUP BY time, account, currency\n)\nSELECT time, SUM(\" \") AS \" \", currency \nFROM t2 \nGROUP BY time, currency \nORDER BY time, currency",
+          "rawSql": "SELECT\n(FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60 * 1000)) as time,\nAVG(collateral_jpy) as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000) AND (FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60)) < extract(epoch from now()) - 5 * 60\nGROUP BY time, account\nORDER by time, account",
           "refId": "A",
           "select": [
             [
@@ -549,7 +503,7 @@
           ]
         }
       ],
-      "title": "stacked converted collaterals jpy by currency",
+      "title": "stacked converted collaterals jpy",
       "transformations": [],
       "type": "timeseries"
     },
@@ -702,7 +656,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 20,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -719,7 +673,7 @@
             "spanNulls": true,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -748,7 +702,7 @@
         "x": 12,
         "y": 16
       },
-      "id": 53,
+      "id": 54,
       "options": {
         "legend": {
           "calcs": [
@@ -774,7 +728,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nfetched_at as time,\ncollateral_jpy as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000)\nORDER by fetched_at, account",
+          "rawSql": "WITH t2 AS (SELECT\n(FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60 * 1000)) as time,\nAVG(collateral_jpy) as \" \",\naccount, currency\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000) AND (FLOOR(fetched_at / (5 * 60 * 1000)) * (5 * 60)) < extract(epoch from now()) - 5 * 60\nGROUP BY time, account, currency\n)\nSELECT time, SUM(\" \") AS \" \", currency \nFROM t2 \nGROUP BY time, currency \nORDER BY time, currency",
           "refId": "A",
           "select": [
             [
@@ -813,7 +767,7 @@
           ]
         }
       ],
-      "title": "converted collaterals jpy",
+      "title": "stacked converted collaterals jpy by currency",
       "transformations": [],
       "type": "timeseries"
     },
@@ -954,6 +908,138 @@
           }
         }
       ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 53,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL-CRYPTO-SYNC}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\nfetched_at as time,\ncollateral_jpy as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000)\nORDER by fetched_at, account",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "converted collaterals jpy",
+      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -1523,6 +1609,6 @@
   "timezone": "",
   "title": "crypto-sync",
   "uid": "KrXkQrF4k",
-  "version": 46,
+  "version": 47,
   "weekStart": ""
 }
