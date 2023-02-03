@@ -88,7 +88,7 @@ class Synchronizer:
         result = fetch_collateral(self._client, self._account_type)
         converted = fetch_converted_collaterals(result['collateral'], result['currency'])
         for key in converted:
-            result['currency_{}'.format(key)] = converted[key]
+            result['collateral_{}'.format(key)] = converted[key]
         self._add_common_columns([result], fetched_at)
         self._logger.info('insert {}'.format(result))
         self._hist_collaterals_table.insert(result)
