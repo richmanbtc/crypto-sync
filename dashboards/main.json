@@ -154,7 +154,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nfetched_at as time,\n(collateral / FIRST_VALUE (collateral) OVER (PARTITION BY account ORDER BY fetched_at) - 1) * 100 as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000)\nORDER by fetched_at, account",
+          "rawSql": "SELECT\nfetched_at as time,\n((1e-37 + collateral) / (1e-37 + FIRST_VALUE(collateral) OVER (PARTITION BY account ORDER BY fetched_at)) - 1) * 100 as \" \",\naccount\nFROM hist_collaterals AS t1\nWHERE $__unixEpochFilter(fetched_at / 1000)\nORDER by fetched_at, account",
           "refId": "A",
           "select": [
             [
@@ -570,7 +570,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nfetched_at as time,\nsize * mark_price as \" \",\nsymbol \nfrom hist_positions \nwhere account = $account AND $__unixEpochFilter(fetched_at / 1000)\norder by fetched_at, symbol",
+          "rawSql": "SELECT\nfetched_at as time,\n(CASE WHEN symbol LIKE '%:%' AND symbol NOT LIKE '%:USD%' AND symbol NOT LIKE '%:JPY%' THEN size / mark_price ELSE size * mark_price END) as \" \",\nsymbol \nfrom hist_positions \nwhere account = $account AND $__unixEpochFilter(fetched_at / 1000)\norder by fetched_at, symbol",
           "refId": "A",
           "select": [
             [
@@ -702,7 +702,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nt1.fetched_at as time,\nsize * mark_price / t2.collateral as \" \", \nsymbol\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at AND t1.account = t2.account\nWHERE t1.account = $account AND $__unixEpochFilter(t1.fetched_at / 1000)\nORDER by t1.fetched_at, symbol",
+          "rawSql": "SELECT\nt1.fetched_at as time,\n(CASE WHEN symbol LIKE '%:%' AND symbol NOT LIKE '%:USD%' AND symbol NOT LIKE '%:JPY%' THEN size / mark_price ELSE size * mark_price END) / t2.collateral as \" \", \nsymbol\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at AND t1.account = t2.account\nWHERE t1.account = $account AND $__unixEpochFilter(t1.fetched_at / 1000)\nORDER by t1.fetched_at, symbol",
           "refId": "A",
           "select": [
             [
@@ -763,7 +763,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -911,7 +912,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -954,7 +956,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\nt1.fetched_at as time,\nsum(abs(size * mark_price) / t2.collateral) as \" \"\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at AND t1.account = t2.account\nWHERE t1.account = $account AND $__unixEpochFilter(t1.fetched_at / 1000)\nGROUP BY t1.fetched_at\nORDER by t1.fetched_at",
+          "rawSql": "SELECT\nt1.fetched_at as time,\nsum(abs(CASE WHEN symbol LIKE '%:%' AND symbol NOT LIKE '%:USD%' AND symbol NOT LIKE '%:JPY%' THEN size / mark_price ELSE size * mark_price END) / t2.collateral) as \" \"\nFROM hist_positions AS t1\nINNER JOIN hist_collaterals AS t2 ON t1.fetched_at = t2.fetched_at AND t1.account = t2.account\nWHERE t1.account = $account AND $__unixEpochFilter(t1.fetched_at / 1000)\nGROUP BY t1.fetched_at\nORDER by t1.fetched_at",
           "refId": "A",
           "select": [
             [
@@ -1025,13 +1027,13 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "crypto-sync",
   "uid": "KrXkQrF4k",
-  "version": 40,
+  "version": 43,
   "weekStart": ""
 }
