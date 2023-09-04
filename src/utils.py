@@ -42,7 +42,7 @@ def fetch_orders(client, symbol):
 
 def fetch_collateral(client, account_type):
     if client.id == 'binance':
-        res = client.fapiPrivateGetAccount()
+        res = client.fapiPrivateV2GetAccount()
         collateral = float(res['totalMarginBalance'])
         currency = 'USD'
     elif client.id == 'bybit':
