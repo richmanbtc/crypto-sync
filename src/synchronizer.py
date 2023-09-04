@@ -38,7 +38,7 @@ class Synchronizer:
 
     def _step(self):
         fetched_at = int(time.time() * 1000)
-        self._fetch_orders(fetched_at)
+        # self._fetch_orders(fetched_at)
         self._fetch_hist_positions(fetched_at)
         self._fetch_hist_collaterals(fetched_at)
 
