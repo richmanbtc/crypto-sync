@@ -18,6 +18,7 @@ def start():
     account = os.getenv('CRYPTO_SYNC_ACCOUNT')
     account_type = os.getenv('CRYPTO_SYNC_ACCOUNT_TYPE', '')
     account_type = None if account_type == '' else account_type
+    panic_interval = int(os.getenv('CRYPTO_SYNC_PANIC_INTERVAL', '300'))
 
     if account is None or account == '':
         raise Exception('CRYPTO_SYNC_ACCOUNT empty')
@@ -28,9 +29,10 @@ def start():
     logger.info('exchange {}'.format(exchange))
     logger.info('account {}'.format(account))
     logger.info('account_type {}'.format(account_type))
+    logger.info('panic_interval {}'.format(panic_interval))
 
     panic_manager = PanicManager(logger=logger)
-    panic_manager.register('bot', 5 * 60, 5 * 60)
+    panic_manager.register('bot', panic_interval, panic_interval)
     def health_check_ping():
         panic_manager.ping('bot')
 
