@@ -1,5 +1,6 @@
 import time
 import traceback
+from sqlalchemy import tuple_
 from .utils import (
     fetch_collateral,
     fetch_orders,
@@ -45,23 +46,31 @@ class Synchronizer:
         statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = :account"
         symbols = [row['symbol'] for row in self._db.query(statement, account=self._account)]
 
+        orders = []
         for symbol in symbols:
             self._fetch_sleep()
             self._logger.info('fetch_orders {}'.format(symbol))
-            orders = fetch_orders(self._client, symbol)
-            orders = list(map(normalize_order, orders))
-            self._add_common_columns(orders, fetched_at)
+            symbol_orders = fetch_orders(self._client, symbol)
+            orders += list(map(normalize_order, symbol_orders))
 
-            ids = [x['order_id'] for x in orders]
-            statement = """SELECT order_id FROM orders
-            WHERE account = :account AND symbol = :symbol
-            AND status <> 'open' AND order_id = ANY(:ids)"""
-            frozen_order_ids = set([row['order_id'] for row in self._db.query(
-                statement, account=self._account, symbol=symbol, ids=ids)])
+        self._add_common_columns(orders, fetched_at)
 
-            orders = [x for x in orders if x['order_id'] not in frozen_order_ids]
-            self._logger.info('upsert {}'.format(orders))
-            self._orders_table.upsert_many(orders, keys=['account', 'order_id'])
+        ids = [x['order_id'] for x in orders]
+        statement = """SELECT order_id FROM orders
+        WHERE account = :account
+        AND status <> 'open' AND order_id = ANY(:ids)"""
+        frozen_order_ids = set([row['order_id'] for row in self._db.query(
+            statement, account=self._account, ids=ids)])
+
+        orders = [x for x in orders if x['order_id'] not in frozen_order_ids]
+        self._logger.info('upsert {}'.format(orders))
+        with self._db:
+            self._orders_table.delete(
+                account=self._account,
+                order_id={ 'in': [x['order_id'] for x in orders] }
+            )
+            self._orders_table.insert_many(orders)
+        # self._orders_table.upsert_many(orders, keys=['account', 'order_id'])
 
     def _fetch_hist_positions(self, fetched_at):
         self._fetch_sleep()
