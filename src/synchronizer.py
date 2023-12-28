@@ -62,6 +62,8 @@ class Synchronizer:
         frozen_order_ids = set([row['order_id'] for row in self._db.query(
             statement, account=self._account, ids=ids)])
 
+        # TODO: order_id is not unique globally in binance
+
         orders = [x for x in orders if x['order_id'] not in frozen_order_ids]
         self._logger.info('upsert {}'.format(orders))
         with self._db:
