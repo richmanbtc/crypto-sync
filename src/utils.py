@@ -51,8 +51,11 @@ def fetch_collateral(client, account_type):
             'btc': 'BTC',
             'eth': 'ETH',
         }[account_type]
-        res = client.privateGetV2PrivateWalletBalance({ 'coin': coin })
-        collateral = float(res['result'][coin]['equity'])
+        res = client.privateGetV5AccountWalletBalance({
+            'accountType': 'CONTRACT',
+            'coin': coin,
+        })
+        collateral = float(res['result']['list'][0]['coin'][0]['equity'])
         currency = 'USD' if coin == 'USDT' else coin
     elif client.id == 'okx':
         res = client.privateGetAccountBalance()
