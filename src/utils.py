@@ -61,6 +61,12 @@ def fetch_collateral(client, account_type):
         res = client.privateGetAccountBalance()
         collateral = float(res['data'][0]['totalEq'])
         currency = 'USD'
+    elif client.id == 'kucoinfutures':
+        res = client.futuresPrivateGetAccountOverview({
+            'currency': 'USDT'
+        })
+        collateral = float(res['data']['accountEquity'])
+        currency = 'USD'
     elif client.id == 'bitflyer':
         res = client.privateGetGetcollateral()
         collateral = float(res['collateral']) + float(res['open_position_pnl'])
