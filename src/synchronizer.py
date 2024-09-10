@@ -1,6 +1,6 @@
 import time
 import traceback
-from sqlalchemy import tuple_
+from ccxt.base.errors import BadSymbol
 from .utils import (
     fetch_collateral,
     fetch_orders,
@@ -50,8 +50,11 @@ class Synchronizer:
         for symbol in symbols:
             self._fetch_sleep()
             self._logger.info('fetch_orders {}'.format(symbol))
-            symbol_orders = fetch_orders(self._client, symbol)
-            orders += list(map(normalize_order, symbol_orders))
+            try:
+                symbol_orders = fetch_orders(self._client, symbol)
+                orders += list(map(normalize_order, symbol_orders))
+            except BadSymbol as err:
+                self._logger.warning(f'symbol {symbol} not exist. ignored {err}')
 
         self._add_common_columns(orders, fetched_at)
 
