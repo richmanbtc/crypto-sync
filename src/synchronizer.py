@@ -78,8 +78,18 @@ class Synchronizer:
         self._fetch_sleep()
         self._logger.info('fetch_positions')
         positions = fetch_positions(self._client, self._account_type)
-        statement = "SELECT DISTINCT symbol FROM hist_positions WHERE account = :account"
-        existing_symbols = set([row['symbol'] for row in self._db.query(statement, account=self._account)])
+        statement = '''SELECT DISTINCT symbol FROM hist_positions
+            WHERE account = :account
+            AND size <> 0
+            AND fetched_at >= :min_fetched_at'''
+        existing_symbols = set([
+            row['symbol'] for row in
+            self._db.query(
+                statement,
+                account=self._account,
+                min_fetched_at=int((time.time() - 24 * 60 * 60) * 1000)
+            )
+        ])
         for i in range(len(positions))[::-1]:
             pos = positions[i]
             if pos['size'] == 0 and pos['symbol'] not in existing_symbols:
