@@ -11,7 +11,7 @@ def create_ccxt_client(exchange, api_key=None, api_secret=None,
     if exchange == 'binance':
         options['defaultType'] = 'future'
     if exchange == 'bybit':
-        if account_type is not None:
+        if account_type is not None and 'unified' != account_type:
             options['defaultSubType'] = 'inverse'
 
     client = getattr(ccxt, exchange)({
@@ -50,9 +50,10 @@ def fetch_collateral(client, account_type):
             None: 'USDT',
             'btc': 'BTC',
             'eth': 'ETH',
+            'unified': 'USDT',
         }[account_type]
         res = client.privateGetV5AccountWalletBalance({
-            'accountType': 'CONTRACT',
+            'accountType': 'UNIFIED' if account_type == 'unified' else 'CONTRACT',
             'coin': coin,
         })
         collateral = float(res['result']['list'][0]['coin'][0]['equity'])
@@ -106,7 +107,7 @@ def fetch_positions(client, account_type):
 
     symbols = None
     if client.id == 'bybit':
-        if account_type is not None:
+        if account_type is not None and 'unified' != account_type:
             symbols = {
                 'btc': 'BTC/USD:BTC',
                 'eth': 'ETH/USD:ETH',
@@ -134,7 +135,7 @@ def _merge_positions(positions):
 
 def validate_account_type(exchange, account_type):
     if exchange == 'bybit':
-        allowed_account_types = [None, 'btc', 'eth']
+        allowed_account_types = [None, 'btc', 'eth', 'unified']
     else:
         allowed_account_types = [None]
 
