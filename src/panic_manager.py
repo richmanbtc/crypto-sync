@@ -1,3 +1,4 @@
+import logging
 import os
 import threading
 import time
@@ -6,42 +7,37 @@ import time
 class PanicManager:
     def __init__(self, logger=None):
         self.monitors = {}
-        self.logger = logger
+        self.logger = logger or logging.getLogger(__name__)
         self.lock = threading.Lock()
-        self.thread = threading.Thread(target=self.run)
+        self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
 
     def register(self, tag=None, start_time=None, interval=None):
-        self.logger.debug('panic_manager register tag {} start_time {} sec interval {} sec'.format(tag, start_time, interval))
         with self.lock:
             self.monitors[tag] = {
-                'start_at': time.time(),
-                'ping_at': None,
-                'start_time': start_time,
-                'interval': interval
+                'start_at': time.monotonic(), 'ping_at': None,
+                'start_time': start_time, 'interval': interval,
             }
 
     def ping(self, tag=None):
-        self.logger.debug('panic_manager ping {}'.format(tag))
         with self.lock:
-            self.monitors[tag]['ping_at'] = time.time()
+            self.monitors[tag]['ping_at'] = time.monotonic()
 
     def panic(self):
         os._exit(1)
 
+    def check(self):
+        now = time.monotonic()
+        with self.lock:
+            for tag, monitor in self.monitors.items():
+                pinged = monitor['ping_at'] is not None
+                last = monitor['ping_at'] if pinged else monitor['start_at']
+                timeout = monitor['interval'] if pinged else monitor['start_time']
+                if now - last > timeout:
+                    self.logger.error('%s health check delayed; exiting', tag)
+                    self.panic()
+
     def run(self):
         while True:
-            # self.logger.debug('panic_manager loop')
-            now = time.time()
-            with self.lock:
-                for tag in self.monitors:
-                    monitor = self.monitors[tag]
-                    if monitor['ping_at']:
-                        if now - monitor['ping_at'] > monitor['interval']:
-                            self.logger.error('{} ping delayed. exit'.format(tag))
-                            self.panic()
-                    else:
-                        if now - monitor['start_at'] > monitor['start_time']:
-                            self.logger.error('{} start delayed. exit'.format(tag))
-                            self.panic()
             time.sleep(5)
+            self.check()

@@ -1,2 +1,12 @@
-.git
-.env
+*
+!Dockerfile
+!requirements.txt
+!requirements-build.txt
+!src/
+!src/*.py
+!tests/
+!tests/*.py
+!tests/fixtures/
+!tests/fixtures/*.json
+!scripts/
+!scripts/*.sh

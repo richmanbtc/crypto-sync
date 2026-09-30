@@ -2,29 +2,49 @@ name: Publish Docker image
 
 on:
   push:
-    branches-ignore:
-      - '**'
+    branches:
+      - master
+      - 'feature/**'
     tags:
       - 'v*'
-      - 'image-v*'
+
+permissions:
+  contents: read
 
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
+  publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Select image tag
+        id: image
+        shell: bash
+        run: |
+          export LC_ALL=C
+          case "$GITHUB_REF" in
+            refs/heads/master) tag=latest ;;
+            refs/heads/*) tag=${GITHUB_REF_NAME//\//_} ;;
+            refs/tags/*) tag=$GITHUB_REF_NAME ;;
+          esac
+          if [[ ! "$tag" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]]; then
+            suffix=$(printf '%s' "$GITHUB_REF" | sha256sum)
+            tag=${tag//[^a-zA-Z0-9_.-]/_}
+            tag=${tag:0:115}-${suffix:0:12}
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        run: docker build --pull --tag crypto-sync:checked .
 
       - uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # https://stackoverflow.com/questions/58177786/get-the-current-pushed-tag-in-github-actions
-      - run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-
-      - uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:${{ env.RELEASE_VERSION }}
+      - name: Publish the checked image
+        env:
+          TARGET_IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:${{ steps.image.outputs.tag }}
+        run: |
+          docker tag crypto-sync:checked "$TARGET_IMAGE"
+          docker push "$TARGET_IMAGE"

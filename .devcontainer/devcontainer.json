@@ -1,0 +1,10 @@
+{
+  "name": "crypto-sync",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "../"
+  },
+  "remoteUser": "root",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind"
+}

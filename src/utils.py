@@ -25,21 +25,6 @@ def create_ccxt_client(exchange, api_key=None, api_secret=None,
     return client
 
 
-def fetch_orders(client, symbol):
-    if client.id == 'okx':
-        client.load_markets()
-        market = client.market(symbol)
-        type, query = client.handle_market_type_and_params('fetchCanceledOrders', market, {})
-        res = client.privateGetTradeOrdersHistory({
-            'instType': client.convert_to_instrument_type(type),
-            'instId': market['id'],
-        })
-        data = client.safe_value(res, 'data', [])
-        return client.parse_orders(data, market, None, None)
-
-    return client.fetch_orders(symbol=symbol)
-
-
 def fetch_collateral(client, account_type):
     if client.id == 'binance':
         res = client.fapiPrivateV2GetAccount()

@@ -1,0 +1,16 @@
+{
+  "binance": {"totalMarginBalance": "1200.5"},
+  "bybit": {"result": {"list": [{"coin": [{"equity": "12.5"}]}]}},
+  "okx": {"data": [{"totalEq": "1200.5"}]},
+  "kucoinfutures": {"data": {"accountEquity": "1200.5"}},
+  "bitflyer": {"collateral": "1000", "open_position_pnl": "200.5"},
+  "bitflyer_positions": [
+    {"size": "0.5", "side": "BUY"},
+    {"size": "0.2", "side": "SELL"}
+  ],
+  "positions": [
+    {"symbol": "BTC/USDT:USDT", "contracts": 3, "contractSize": 0.1, "side": "long", "markPrice": 50000},
+    {"symbol": "BTC/USDT:USDT", "contracts": 1, "contractSize": 0.1, "side": "short", "markPrice": 50000},
+    {"symbol": "ETH/USDT:USDT", "contracts": 2, "contractSize": 1, "side": "short", "markPrice": null}
+  ]
+}
