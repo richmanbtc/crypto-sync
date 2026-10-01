@@ -116,13 +116,3 @@ def _merge_positions(positions):
         side_int = 1 if pos['side'] == 'long' else -1
         merged[symbol]['size'] += pos['contracts'] * pos['contractSize'] * side_int
     return list(merged.values())
-
-
-def validate_account_type(exchange, account_type):
-    if exchange == 'bybit':
-        allowed_account_types = [None, 'btc', 'eth', 'unified']
-    else:
-        allowed_account_types = [None]
-
-    if account_type not in allowed_account_types:
-        raise Exception('invalid account_type {} {}'.format(exchange, account_type))

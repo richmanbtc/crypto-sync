@@ -20,6 +20,13 @@ entries after 24 hours. This cache tracks observations even if a write fails.
 Returned zero positions are kept only for recent symbols. Positions omitted by
 an exchange are not synthesized. Long and short positions remain netted.
 
+Required settings are checked before importing the exchange and Google SDKs.
+Startup failures log missing or invalid setting names without their values,
+then sleep for a random 5-10 seconds before exiting with status 1. Other
+startup errors log only their class and stack location. The delay spreads
+automatic restarts across collectors; the deployment still controls restarts.
+SIGTERM also exits during this delay. The watchdog behavior is unchanged.
+
 Only a fully successful cycle pings the watchdog. Continuous failures still
 exit with status 1 after the configured deadline; the deployment controls
 restarts. SIGTERM exits immediately, including during a cycle. There is no

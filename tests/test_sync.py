@@ -135,8 +135,12 @@ class RuntimeTests(OfflineTest):
     def test_startup_failure_logs_no_private_exception_body(self):
         from src.main import main
         with patch('src.main.start', side_effect=RuntimeError('synthetic-private-response')), \
-             patch('src.main.create_logger') as logger:
+             patch('src.main.create_logger') as logger, \
+             patch('src.main.random.uniform', return_value=7) as delay, \
+             patch('src.main.time.sleep') as sleep:
             self.assertEqual(main(), 1)
+        delay.assert_called_once_with(5, 10)
+        sleep.assert_called_once_with(7)
         calls = str(logger.return_value.mock_calls)
         self.assertIn('RuntimeError', calls)
         self.assertNotIn('synthetic-private-response', calls)
