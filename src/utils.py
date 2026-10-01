@@ -10,8 +10,6 @@ def create_ccxt_client(exchange, api_key=None, api_secret=None,
         headers['FTX-SUBACCOUNT'] = subaccount
     if exchange == 'binance':
         options['defaultType'] = 'future'
-        # Futures collection does not need the authenticated SAPI currency API.
-        options['fetchCurrencies'] = False
 
     client = getattr(ccxt, exchange)({
         'apiKey': api_key,

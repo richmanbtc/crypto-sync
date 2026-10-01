@@ -75,14 +75,6 @@ class ExchangeTests(OfflineTest):
             'accountType': 'UNIFIED', 'coin': 'USDT',
         })
 
-    def test_binance_market_loading_skips_private_currency_api(self):
-        client = utils.create_ccxt_client('binance')
-        with patch.object(client, 'check_required_credentials', return_value=True), \
-             patch.object(client, 'sapiGetCapitalConfigGetall') as currencies, \
-             patch.object(client, 'fetch_markets', return_value=[]):
-            client.load_markets()
-        currencies.assert_not_called()
-
     def test_position_netting_and_missing_price(self):
         rows = copy.deepcopy(FIXTURES['positions'])
         merged = utils._merge_positions(rows)

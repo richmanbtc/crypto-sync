@@ -71,9 +71,6 @@ Bybit wallet requests use UNIFIED and USDT. Collateral is USDT equity,
 not the whole unified account.
 See https://bybit-exchange.github.io/docs/v5/account/wallet-balance.
 
-Binance skips the authenticated SAPI currency lookup during market loading;
-USD-M futures API authentication is still required for positions and collateral.
-
 Authentication is supplied by the runtime environment. Deployment configuration
 is maintained outside this repository.
 
