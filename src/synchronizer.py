@@ -11,7 +11,7 @@ from .utils import (
 
 class Synchronizer:
     def __init__(self, client, logger,
-                 store, health_check_ping, account, account_type):
+                 store, health_check_ping, account):
         self._client = client
         self._logger = logger
         self._store = store
@@ -20,7 +20,6 @@ class Synchronizer:
         )
         self._health_check_ping = health_check_ping
         self._account = account
-        self._account_type = account_type
         self._fetch_interval = 2
         self._loop_interval = 60
 
@@ -45,7 +44,7 @@ class Synchronizer:
     def _fetch_hist_positions(self, fetched_at):
         self._fetch_sleep()
         self._logger.info('fetch_positions')
-        positions = fetch_positions(self._client, self._account_type)
+        positions = fetch_positions(self._client)
         self._recent_symbols = {
             symbol: seen for symbol, seen in self._recent_symbols.items()
             if seen >= fetched_at - DAY_MS
@@ -69,7 +68,7 @@ class Synchronizer:
     def _fetch_hist_collaterals(self, fetched_at):
         self._fetch_sleep()
         self._logger.info('fetch_collateral')
-        result = fetch_collateral(self._client, self._account_type)
+        result = fetch_collateral(self._client)
         converted = fetch_converted_collaterals(result['collateral'], result['currency'])
         for key in converted:
             result['collateral_{}'.format(key)] = converted[key]

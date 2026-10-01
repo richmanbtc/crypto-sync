@@ -24,8 +24,7 @@ from src.main import main
 base = dict(CCXT_EXCHANGE='bybit', CRYPTO_SYNC_ACCOUNT='test',
             CRYPTO_SYNC_BQ_PROJECT='test-project', CRYPTO_SYNC_BQ_DATASET='history')
 cases = [({}, 'Required settings missing')]
-for field in ('CRYPTO_SYNC_PANIC_INTERVAL', 'CRYPTO_SYNC_ACCOUNT_TYPE',
-              'CRYPTO_SYNC_LOG_LEVEL'):
+for field in ('CRYPTO_SYNC_PANIC_INTERVAL', 'CRYPTO_SYNC_LOG_LEVEL'):
     cases.append((dict(base, **{field: 'synthetic-private-value'}), field))
 for env, expected in cases:
     with patch.dict(os.environ, env, clear=True), \\

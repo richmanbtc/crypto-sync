@@ -19,10 +19,6 @@ def load_settings(environ=None):
     missing = [name for name in required if not env.get(name)]
     if missing:
         raise ConfigurationError('Required settings missing: ' + ', '.join(missing))
-    account_type = env.get('CRYPTO_SYNC_ACCOUNT_TYPE') or None
-    allowed = (None, 'btc', 'eth', 'unified') if env['CCXT_EXCHANGE'] == 'bybit' else (None,)
-    if account_type not in allowed:
-        raise ConfigurationError('Invalid CRYPTO_SYNC_ACCOUNT_TYPE')
     try:
         interval = int(env.get('CRYPTO_SYNC_PANIC_INTERVAL', '300'))
     except ValueError:
@@ -35,7 +31,6 @@ def load_settings(environ=None):
         'project': env['CRYPTO_SYNC_BQ_PROJECT'],
         'dataset': env['CRYPTO_SYNC_BQ_DATASET'],
         'location': env.get('CRYPTO_SYNC_BQ_LOCATION') or None,
-        'account_type': account_type,
         'api_key': env.get('CCXT_API_KEY'),
         'api_secret': env.get('CCXT_API_SECRET'),
         'api_password': env.get('CCXT_API_PASSWORD'),
@@ -65,11 +60,11 @@ def start():
     store.ensure_tables()
     client = create_ccxt_client(**{
         key: settings[key] for key in
-        ('exchange', 'api_key', 'api_secret', 'api_password', 'account_type')
+        ('exchange', 'api_key', 'api_secret', 'api_password')
     })
     Synchronizer(
         client=client, logger=logger, store=store,
-        account=settings['account'], account_type=settings['account_type'],
+        account=settings['account'],
         health_check_ping=lambda: panic_manager.ping('bot'),
     ).run()
 

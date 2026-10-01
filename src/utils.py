@@ -2,7 +2,7 @@ import ccxt
 
 
 def create_ccxt_client(exchange, api_key=None, api_secret=None,
-                       api_password=None, subaccount=None, account_type=None):
+                       api_password=None, subaccount=None):
     headers = {}
     options = {}
 
@@ -10,9 +10,8 @@ def create_ccxt_client(exchange, api_key=None, api_secret=None,
         headers['FTX-SUBACCOUNT'] = subaccount
     if exchange == 'binance':
         options['defaultType'] = 'future'
-    if exchange == 'bybit':
-        if account_type is not None and 'unified' != account_type:
-            options['defaultSubType'] = 'inverse'
+        # Futures collection does not need the authenticated SAPI currency API.
+        options['fetchCurrencies'] = False
 
     client = getattr(ccxt, exchange)({
         'apiKey': api_key,
@@ -25,24 +24,18 @@ def create_ccxt_client(exchange, api_key=None, api_secret=None,
     return client
 
 
-def fetch_collateral(client, account_type):
+def fetch_collateral(client):
     if client.id == 'binance':
         res = client.fapiPrivateV2GetAccount()
         collateral = float(res['totalMarginBalance'])
         currency = 'USD'
     elif client.id == 'bybit':
-        coin = {
-            None: 'USDT',
-            'btc': 'BTC',
-            'eth': 'ETH',
-            'unified': 'USDT',
-        }[account_type]
         res = client.privateGetV5AccountWalletBalance({
-            'accountType': 'UNIFIED' if account_type == 'unified' else 'CONTRACT',
-            'coin': coin,
+            'accountType': 'UNIFIED',
+            'coin': 'USDT',
         })
         collateral = float(res['result']['list'][0]['coin'][0]['equity'])
-        currency = 'USD' if coin == 'USDT' else coin
+        currency = 'USD'
     elif client.id == 'okx':
         res = client.privateGetAccountBalance()
         collateral = float(res['data'][0]['totalEq'])
@@ -76,7 +69,7 @@ def fetch_converted_collaterals(collateral, currency):
     return fetch_converted_collaterals(collateral * price, 'USD')
 
 
-def fetch_positions(client, account_type):
+def fetch_positions(client):
     if client.id == 'bitflyer':
         res = client.privateGetGetpositions({'product_code': 'FX_BTC_JPY'})
         pos = 0.0
@@ -90,16 +83,7 @@ def fetch_positions(client, account_type):
             }
         ]
 
-    symbols = None
-    if client.id == 'bybit':
-        if account_type is not None and 'unified' != account_type:
-            symbols = {
-                'btc': 'BTC/USD:BTC',
-                'eth': 'ETH/USD:ETH',
-            }[account_type]
-            symbols = [symbols]
-
-    positions = client.fetch_positions(symbols=symbols)
+    positions = client.fetch_positions()
     return _merge_positions(positions)
 
 

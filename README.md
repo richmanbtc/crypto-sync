@@ -57,7 +57,6 @@ Use read-only exchange API keys; no trading or withdrawal permissions are needed
 | CCXT_API_SECRET | Exchange API secret |
 | CCXT_API_PASSWORD | Exchange password if required |
 | CRYPTO_SYNC_ACCOUNT | Required account label |
-| CRYPTO_SYNC_ACCOUNT_TYPE | Empty by default; Bybit also accepts btc, eth, unified |
 | CRYPTO_SYNC_BQ_PROJECT | Required Google Cloud project |
 | CRYPTO_SYNC_BQ_DATASET | Required dataset ID within that project |
 | CRYPTO_SYNC_BQ_LOCATION | Dataset location; optional when inferred by BigQuery |
@@ -67,6 +66,13 @@ Use read-only exchange API keys; no trading or withdrawal permissions are needed
 ```sh
 python -m src.main
 ```
+
+Bybit wallet requests use UNIFIED and USDT. Collateral is USDT equity,
+not the whole unified account.
+See https://bybit-exchange.github.io/docs/v5/account/wallet-balance.
+
+Binance skips the authenticated SAPI currency lookup during market loading;
+USD-M futures API authentication is still required for positions and collateral.
 
 Authentication is supplied by the runtime environment. Deployment configuration
 is maintained outside this repository.

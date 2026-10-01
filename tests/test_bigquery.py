@@ -138,7 +138,7 @@ class SynchronizerTests(OfflineTest):
     def make_sync(self, recent=None, **kwargs):
         store = Mock()
         store.recent_symbols.return_value = recent or {}
-        sync = Synchronizer(Mock(), Mock(), store, Mock(), 'test', None, **kwargs)
+        sync = Synchronizer(Mock(), Mock(), store, Mock(), 'test', **kwargs)
         return sync, store
 
     def test_full_cycle(self):

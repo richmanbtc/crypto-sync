@@ -59,25 +59,29 @@ class ExchangeTests(OfflineTest):
             with self.subTest(exchange=exchange):
                 client = Mock(id=exchange)
                 getattr(client, method).return_value = FIXTURES[exchange]
-                result = utils.fetch_collateral(client, None)
+                result = utils.fetch_collateral(client)
                 self.assertEqual(result, {
                     'collateral': 1200.5,
                     'currency': 'JPY' if exchange == 'bitflyer' else 'USD',
                 })
 
-    def test_bybit_account_types(self):
-        for account_type, coin in ((None, 'USDT'), ('unified', 'USDT'),
-                                   ('btc', 'BTC'), ('eth', 'ETH')):
-            with self.subTest(account_type=account_type):
-                client = Mock(id='bybit')
-                client.privateGetV5AccountWalletBalance.return_value = FIXTURES['bybit']
-                self.assertEqual(utils.fetch_collateral(client, account_type), {
-                    'collateral': 12.5, 'currency': 'USD' if coin == 'USDT' else coin,
-                })
-                client.privateGetV5AccountWalletBalance.assert_called_once_with({
-                    'accountType': 'UNIFIED' if account_type == 'unified' else 'CONTRACT',
-                    'coin': coin,
-                })
+    def test_bybit_unified_collateral(self):
+        client = Mock(id='bybit')
+        client.privateGetV5AccountWalletBalance.return_value = FIXTURES['bybit']
+        self.assertEqual(utils.fetch_collateral(client), {
+            'collateral': 12.5, 'currency': 'USD',
+        })
+        client.privateGetV5AccountWalletBalance.assert_called_once_with({
+            'accountType': 'UNIFIED', 'coin': 'USDT',
+        })
+
+    def test_binance_market_loading_skips_private_currency_api(self):
+        client = utils.create_ccxt_client('binance')
+        with patch.object(client, 'check_required_credentials', return_value=True), \
+             patch.object(client, 'sapiGetCapitalConfigGetall') as currencies, \
+             patch.object(client, 'fetch_markets', return_value=[]):
+            client.load_markets()
+        currencies.assert_not_called()
 
     def test_position_netting_and_missing_price(self):
         rows = copy.deepcopy(FIXTURES['positions'])
@@ -91,19 +95,16 @@ class ExchangeTests(OfflineTest):
     def test_bitflyer_positions(self):
         client = Mock(id='bitflyer')
         client.privateGetGetpositions.return_value = FIXTURES['bitflyer_positions']
-        result = utils.fetch_positions(client, None)
+        result = utils.fetch_positions(client)
         self.assertAlmostEqual(result[0]['size'], 0.3)
         self.assertIsNone(result[0]['mark_price'])
         client.privateGetGetpositions.assert_called_once_with({'product_code': 'FX_BTC_JPY'})
 
-    def test_bybit_inverse_symbols(self):
-        for account_type, symbols in ((None, None), ('unified', None),
-                                     ('btc', ['BTC/USD:BTC']), ('eth', ['ETH/USD:ETH'])):
-            with self.subTest(account_type=account_type):
-                client = Mock(id='bybit')
-                client.fetch_positions.return_value = []
-                self.assertEqual(utils.fetch_positions(client, account_type), [])
-                client.fetch_positions.assert_called_once_with(symbols=symbols)
+    def test_bybit_positions(self):
+        client = Mock(id='bybit')
+        client.fetch_positions.return_value = []
+        self.assertEqual(utils.fetch_positions(client), [])
+        client.fetch_positions.assert_called_once_with()
 
     def test_currency_conversion(self):
         client = Mock()
@@ -121,8 +122,6 @@ class ExchangeTests(OfflineTest):
     def test_exchange_options_without_api_calls(self):
         client = utils.create_ccxt_client('binance')
         self.assertEqual(client.options['defaultType'], 'future')
-        client = utils.create_ccxt_client('bybit', account_type='btc')
-        self.assertEqual(client.options['defaultSubType'], 'inverse')
 
 
 class RuntimeTests(OfflineTest):
@@ -156,8 +155,6 @@ class RuntimeTests(OfflineTest):
         for interval in ('0', '-1', 'invalid'):
             with self.subTest(interval=interval), self.assertRaises(ValueError):
                 load_settings(dict(env, CRYPTO_SYNC_PANIC_INTERVAL=interval))
-        with self.assertRaises(Exception):
-            load_settings(dict(env, CRYPTO_SYNC_ACCOUNT_TYPE='invalid'))
 
     def test_failure_location_excludes_private_values(self):
         try:
@@ -183,7 +180,7 @@ class RuntimeTests(OfflineTest):
         logger = Mock()
         store = Mock()
         store.recent_symbols.return_value = {}
-        sync = Synchronizer(Mock(), logger, store, ping, 'test', None)
+        sync = Synchronizer(Mock(), logger, store, ping, 'test')
         sync._loop_interval = 0
         sync._step = Mock(side_effect=[RuntimeError('synthetic private payload'), None])
         with self.assertRaises(KeyboardInterrupt):
