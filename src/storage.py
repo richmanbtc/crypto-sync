@@ -113,18 +113,3 @@ class BigQueryStore:
 
     def insert_collateral(self, row):
         self._insert('hist_collaterals', [row])
-
-    def load_history(self, table, rows):
-        """One migration load job per batch. No streaming limits on old dates."""
-        if not rows:
-            return
-        config = bigquery.LoadJobConfig(
-            schema=SCHEMAS[table],
-            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-            create_disposition=bigquery.CreateDisposition.CREATE_NEVER,
-        )
-        job = self.client.load_table_from_json(
-            encode_rows(table, rows), self.table_id(table),
-            job_config=config, num_retries=0, timeout=60,
-        )
-        job.result(retry=None, timeout=600)

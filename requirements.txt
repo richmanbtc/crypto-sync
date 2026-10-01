@@ -26,7 +26,6 @@ packaging==26.3
 propcache==0.5.4
 proto-plus==1.29.0
 protobuf==7.36.2
-psycopg2==2.9.10
 pyasn1==0.6.4
 pyasn1-modules==0.4.2
 pycares==5.0.1

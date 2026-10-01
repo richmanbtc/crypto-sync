@@ -133,16 +133,6 @@ class BigQueryTests(OfflineTest):
             with self.assertRaises(ValueError):
                 BigQueryStore(self.client, dataset)
 
-    def test_migration_load_uses_append_without_upload_retries(self):
-        self.store.load_history('hist_collaterals', [dict(
-            account='test', currency='USD', collateral=1, fetched_at=0)])
-        call = self.client.load_table_from_json.call_args
-        self.assertEqual(call.kwargs['num_retries'], 0)
-        self.assertEqual(call.kwargs['job_config'].write_disposition, 'WRITE_APPEND')
-        self.assertEqual(call.kwargs['job_config'].create_disposition, 'CREATE_NEVER')
-        self.client.load_table_from_json.return_value.result.assert_called_once_with(
-            retry=None, timeout=600)
-
 
 class SynchronizerTests(OfflineTest):
     def make_sync(self, recent=None, **kwargs):

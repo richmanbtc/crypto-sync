@@ -1,8 +1,8 @@
 # crypto-sync
 
 Collect exchange positions and collateral into BigQuery. One process handles
-one account. PostgreSQL is only a source for the optional one-time migration;
-there is no PostgreSQL output mode. Dashboards are outside this repository.
+one account. Historical PostgreSQL data can be imported manually using the
+linked migration guide. Dashboards are outside this repository.
 
 ## Operation
 
@@ -33,13 +33,13 @@ Create the production dataset outside this application and enable BigQuery.
 The collector creates hist_positions and hist_collaterals if absent. It does
 not create datasets, delete tables, or change existing schemas. Existing column
 types, nullability, and daily fetched_at partitioning are checked before
-collection or migration; incompatible tables cause startup to fail. Use Google
+collection; incompatible tables cause startup to fail. Use Google
 Application Default Credentials (ADC): an attached workload identity or an
 externally provided credential mechanism. Do not bake credential files into
 the image. The container runs as root.
 
 The identity needs table create/read/write access in the destination dataset
-and permission to create query/load jobs in the project. Typical roles are
+and permission to create query jobs in the project. Typical roles are
 BigQuery Data Editor scoped to the dataset and BigQuery Job User on the project.
 Use read-only exchange API keys; no trading or withdrawal permissions are needed.
 
@@ -87,37 +87,7 @@ also allows old dates to be loaded into time-partitioned tables.
 
 ## One-time PostgreSQL migration
 
-Stop all old collectors, import history, then start the BigQuery collectors.
-The downtime gap is accepted. Keep the source PostgreSQL database and the old
-image until the migration is checked. All accounts in the two history tables
-are imported, not just CRYPTO_SYNC_ACCOUNT.
-
-When running from source, install into a Python 3.12 environment:
-
-```sh
-python -m pip install -r requirements.txt
-python -m src.migrate_postgres --batch-size 100000
-```
-
-Supply CRYPTO_SYNC_DATABASE_URL for the source plus the BigQuery settings and
-ADC described above. Exchange credentials are not needed. Never put the source
-connection string into command-line arguments or commit it. The collector
-image includes psycopg2, so no additional migration dependencies are needed.
-In the built image, run the migration module directly; skip the pip commands.
-
-The command uses read-only PostgreSQL transactions and a server-side cursor.
-It loads at most batch-size rows at a time, waits for each append load job,
-and logs confirmed row counts. Upload retries are disabled. Any error stops
-the command with exit status 1. There is no checkpoint, resume, deduplication,
-or automatic cleanup. The default batch size limits the number of load jobs;
-adjust it for available memory and dataset size.
-
-Run against empty destination tables. If it fails, manually delete both
-hist_positions and hist_collaterals, then rerun from the beginning. A timed-out
-load job might still be running: inspect/cancel it and wait for it to finish
-before deleting tables and starting again. Do this before starting the live
-collector, since deleting the tables also deletes newly collected data.
-Do not rerun a successful migration into the same tables: that appends duplicates.
+See the [PostgreSQL to BigQuery migration guide](docs/postgres-to-bigquery.md).
 
 ## Tests and dependencies
 
@@ -131,10 +101,10 @@ Fixtures are synthetic. Tests block sockets and DNS; no development dataset,
 Google credentials, production database, or exchange API is used. Tests cover
 exchange normalization/signing, real BigQuery SDK request serialization and
 no-retry behavior, row errors, timestamps, the recent-symbol cache, discarded
-cycles, migration batching/abort, configuration, and watchdogs.
+cycles, configuration, and watchdogs.
 
-Requirements include psycopg2 for the migration command; SQLAlchemy is unused. CCXT stays at production version 4.2.1. Python
-3.12.14 and the base image digest remain pinned; dependency updates require
+CCXT stays at production version 4.2.1. Python 3.12.14 and the base image
+digest remain pinned; dependency updates require
 fresh installation and tests.
 
 ## Release checks
